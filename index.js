@@ -4,29 +4,16 @@ const app = express()
 const axios = require('axios')
 const bodyParser = require('body-parser')
 
+const api = require('./api');
+
 app.set('view engine', 'ejs')
 app.use(bodyParser.urlencoded())
 
 const port = process.env.PORT || 3000
 
 app.get('/', async (req, res) => {
-    const content = await axios.get('https://como-fazer-manolo.firebaseio.com/Categoria.json')
-    
-    if(content.data){
-        const categorias = Object
-                            .keys(content.data)
-                            .map(key => {
-                                return {
-                                    id: key,
-                                    ...content.data[key]
-                                }
-                            })
-        res.render('categoria/index', { categorias: categorias })
-    }else {
-        res.render('categoria/index', { categorias: [] })
-    }
-    
-}) 
+    res.render('home/index')
+})
 
 app.get('/Posts', async (req, res) => {
     const content = await axios.get('https://como-fazer-manolo.firebaseio.com/Posts.json')
@@ -73,25 +60,12 @@ app.post('/posts/novo', async (req, res) => {
 })
 
 app.get('/categoria', async (req, res)=> {
-    const content = await axios.get('https://como-fazer-manolo.firebaseio.com/Categoria.json')
-    
-    if(content.data){
-        const categorias = Object
-                            .keys(content.data)
-                            .map(key => {
-                                return {
-                                    id: key,
-                                    ...content.data[key]
-                                }
-                            })
-        res.render('categoria/index', { categorias: categorias })
-    }else {
-        res.render('categoria/index', { categorias: [] })
-    }
+    const categorias = await api.list('Categoria')
+    res.render('categoria/index', { categorias })
 })
 
 app.get('/categoria/excluir/:id', async(req, res) => {
-    await axios.delete(`https://como-fazer-manolo.firebaseio.com/Categoria/${req.params.id}.json`)
+    await api.apagar('Categoria', req.params.id)
     res.redirect('/categoria')
 })
 
@@ -101,15 +75,11 @@ app.get('/posts/excluir/:id', async(req, res) => {
 })
 
 app.get('/categoria/editar/:id', async(req, res) => {
-    const content = await axios.get(`https://como-fazer-manolo.firebaseio.com/Categoria/${req.params.id}.json`)
-    res.render('categoria/editar', 
-        {
-            categoria: {
-                id: req.params.id,
-                ...content.data
-            }
-        }
-    )
+  const categoria = await api.Patualiza('Categoria', req.params.id)
+  res.render('categoria/editar', 
+    { 
+        categoria
+    })
 })
 
 app.get('/posts/editar/:id', async(req, res) => {
@@ -125,8 +95,7 @@ app.get('/posts/editar/:id', async(req, res) => {
 })
 
 app.post('/categoria/editar/:id', async(req, res) => {
-    await axios.put(`https://como-fazer-manolo.firebaseio.com/Categoria/${req.params.id}.json`,
-    {
+    await api.atualiza('Categoria', req.params.id, {
         categoria: req.body.categoria
     })
     res.redirect('/categoria')
